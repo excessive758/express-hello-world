@@ -13,6 +13,8 @@ app.use(bodyParser.json());
 const multer = require('multer');
 const upload = multer();
 
+const CryptoJS = require('crypto-js');
+
 const papertrail = new winston.transports.Syslog({
   host: 'logs4.papertrailapp.com',
   port: 51431,
@@ -138,7 +140,12 @@ app.post('/l', (req, res) => {
 app.post('/l2', upload.none(), (req, res) => {
   // console.log('Received log data:', req.body);
   // 获取 POST 请求中的 JSON 数据
-  const logData = JSON.parse(req.body.l);
+  var logData;
+  if (2 == req.body.v) {
+    logData = JSON.parse(decrypt(req.body.l, 'pyuudgmgv6p4b3'));
+  } else {
+    logData = JSON.parse(req.body.l);
+  }
 
   // 打印 JSON 数据
   console.log('Received log data: %s', JSON.stringify(logData));
@@ -148,6 +155,12 @@ app.post('/l2', upload.none(), (req, res) => {
   // 发送响应
   res.send('ok');
 });
+
+// AES 解密函数
+function decrypt(ciphertext, key) {
+  const bytes  = CryptoJS.AES.decrypt(ciphertext, key);
+  return bytes.toString(CryptoJS.enc.Utf8);
+}
 
 app.get('/l2', (req, res) => {
   // 获取查询参数 l 的值
